@@ -6,6 +6,13 @@ This project demonstrates how to develop a parallel machine learning (ML) applic
 2. A prediction application that evaluates wine quality, with and without Docker.
 3. Deployment of the prediction model using Docker for portability.
 
+## GitHub Repository
+- [GitHub Repository Link](https://github.com/MJshah001/cs643-851-pa2-mjs283)
+
+## DockerHub Repository
+- [DockerHub Repository Link](https://hub.docker.com/r/mjshah001/wine-quality-prediction)
+
+
 ---
 
 ## Features
@@ -98,9 +105,7 @@ This project demonstrates how to develop a parallel machine learning (ML) applic
 ---
 
 ### Step 4: Prediction With Docker
- **Docker Hub:**  
-   - [Docker Image](https://hub.docker.com/r/mjshah001/wine-quality-prediction) : https://hub.docker.com/r/mjshah001/wine-quality-prediction
-
+ 
 1. **Set Up Docker:**
    - If Docker is not installed, use the `setup_docker.sh` script:
      ```bash
