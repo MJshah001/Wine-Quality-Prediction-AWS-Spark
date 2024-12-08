@@ -4,11 +4,7 @@ from pyspark.ml.feature import VectorAssembler
 from pyspark.ml.classification import RandomForestClassifier
 from pyspark.ml.evaluation import MulticlassClassificationEvaluator
 from pyspark.ml.tuning import CrossValidator, ParamGridBuilder
-import boto3
 from datetime import datetime
-import os
-
-
 
 # Initialize SparkSession
 spark = SparkSession.builder \
@@ -26,7 +22,6 @@ metrics_output_path = f"/tmp/metrics_{timestamp}.txt"
 s3_bucket = "winequalitydata"
 s3_metrics_path = f"outputs/metrics_{timestamp}.txt"
 
-
 # Helper function to clean column names
 def clean_columns(df):
     """
@@ -43,9 +38,10 @@ train_df = clean_columns(train_df)
 validation_df = spark.read.options(header='true', inferSchema='true', sep=';').csv(validation_path)
 validation_df = clean_columns(validation_df)
 
-# Assemble features
-feature_columns = train_df.columns[:-1]  # All columns except the last one
-label_column = train_df.columns[-1]      # The last column
+# Assemble features, dropping 'residual sugar' and 'free sulfur dioxide'
+columns_to_drop = ["residual sugar", "free sulfur dioxide"]
+feature_columns = [col for col in train_df.columns[:-1] if col not in columns_to_drop]
+label_column = train_df.columns[-1]  # The last column
 
 assembler = VectorAssembler(inputCols=feature_columns, outputCol="features")
 train_df = assembler.transform(train_df).select("features", label_column)
@@ -60,14 +56,15 @@ param_grid = ParamGridBuilder() \
     .addGrid(rf.maxDepth, [5, 10, 15]) \
     .build()
 
-# Define an evaluator for F1 score
-evaluator = MulticlassClassificationEvaluator(labelCol=label_column, predictionCol="prediction", metricName="f1")
+# Define evaluators
+f1_evaluator = MulticlassClassificationEvaluator(labelCol=label_column, predictionCol="prediction", metricName="f1")
+accuracy_evaluator = MulticlassClassificationEvaluator(labelCol=label_column, predictionCol="prediction", metricName="accuracy")
 
 # Set up cross-validation
 crossval = CrossValidator(estimator=rf,
                           estimatorParamMaps=param_grid,
-                          evaluator=evaluator,
-                          numFolds=3)  # 3-fold cross-validation
+                          evaluator=f1_evaluator,
+                          numFolds=5)  # 5-fold cross-validation
 
 # Train the model with cross-validation
 cv_model = crossval.fit(train_df)
@@ -75,34 +72,8 @@ cv_model = crossval.fit(train_df)
 # Save the best model to S3
 cv_model.bestModel.write().overwrite().save(output_model_path)
 
-# Evaluate the best model on the validation dataset
-predictions = cv_model.bestModel.transform(validation_df)
-f1_score = evaluator.evaluate(predictions)
-
-
-# Extract the best hyperparameters 
-best_model_params = cv_model.bestModel.extractParamMap()
-best_params = {}
-
-# Map the parameters to readable key-value pairs
-for param, value in best_model_params.items():
-    param_name = param.name  
-    if "RandomForestClassifier" in str(param):  # Only keep RF params
-        best_params[param_name] = value
-
-# Write metrics to a local file
-with open(metrics_output_path, "w") as f:
-    f.write("\nBest Hyperparameters:\n")
-    for param, value in best_params.items():
-        f.write(f"{param}: {value}\n")
-
-# Upload metrics file to S3
-s3_client = boto3.client('s3')
-s3_client.upload_file(metrics_output_path, s3_bucket, s3_metrics_path)
 
 print(f"Best model saved to: {output_model_path}")
-print(f"F1 Score: {f1_score}")
-print(f"Metrics uploaded to: s3://{s3_bucket}/{s3_metrics_path}")
 
 # Stop SparkSession
 spark.stop()
