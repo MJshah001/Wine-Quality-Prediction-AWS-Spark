@@ -1,0 +1,11 @@
+{
+    "aws": {
+        "access_key": "YOUR_AWS_ACCESS_KEY",
+        "secret_key": "YOUR_AWS_SECRET_KEY",
+        "session_token": "YOUR_AWS_SESSION_TOKEN"
+    },
+    "s3_paths": {
+        "model_path": "s3a://your-bucket/your-model-path",
+        "test_data_path": "s3a://your-bucket/your-test-data-path"
+    }
+}
