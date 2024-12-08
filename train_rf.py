@@ -79,9 +79,22 @@ cv_model.bestModel.write().overwrite().save(output_model_path)
 predictions = cv_model.bestModel.transform(validation_df)
 f1_score = evaluator.evaluate(predictions)
 
+
+# Extract the best hyperparameters 
+best_model_params = cv_model.bestModel.extractParamMap()
+best_params = {}
+
+# Map the parameters to readable key-value pairs
+for param, value in best_model_params.items():
+    param_name = param.name  
+    if "RandomForestClassifier" in str(param):  # Only keep RF params
+        best_params[param_name] = value
+
 # Write metrics to a local file
 with open(metrics_output_path, "w") as f:
-    f.write(f"F1 Score: {f1_score}\n")
+    f.write("\nBest Hyperparameters:\n")
+    for param, value in best_params.items():
+        f.write(f"{param}: {value}\n")
 
 # Upload metrics file to S3
 s3_client = boto3.client('s3')
