@@ -69,7 +69,7 @@ This project demonstrates how to develop a parallel machine learning (ML) applic
 
 ---
 
-### Step 2: Model Training
+### Step 2: Model Training in parallel
 1. **Create an EMR Cluster:**
    - Follow the above EMR configuration.
 2. **Train the Model:**
@@ -194,7 +194,7 @@ If you prefer not to use the `setup_spark_ec2.sh` script, follow these steps to 
 ---
 
 
-### Step 4: Installation with Docker
+### Step 4: Prediction with Docker
 
 #### Option 1: Using `setup_docker.sh` Script
 
