@@ -84,19 +84,34 @@ This project demonstrates how to develop a parallel machine learning (ML) applic
 ---
 
 ### Step 3: Prediction Without Docker
+
+#### Option 1: Using `setup_spark_ec2.sh` Script
+
 1. **Launch an EC2 Instance:**
    - AMI: `Ubuntu Server 24.04 LTS`
    - Instance Type: `t2.medium`
-2. **Install Spark:**
-   - Create a `setup_spark_ec2.sh` script with the installation commands.
-   - Run the script:
+
+2. **Add Spark environment variables to `~/.bashrc`**:
+     ```bash
+     echo "export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64" >> ~/.bashrc
+     echo "export SPARK_HOME=~/spark" >> ~/.bashrc
+     echo "export PATH=\$SPARK_HOME/bin:\$SPARK_HOME/sbin:\$PATH" >> ~/.bashrc
+     source ~/.bashrc
+     ```
+
+3. **Run Setup Script:**
+   - Upload the `setup_spark_ec2.sh` script to your EC2 instance.
+   - SSH into your EC2 instance and run the following commands to give execution permission and run the setup script:
      ```bash
      chmod +x setup_spark_ec2.sh
      ./setup_spark_ec2.sh
      ```
-3. **Run Prediction:**
-   - Create a file `app.py` and copy the prediction code into it.
-   - Run the application:
+
+4. **Run Prediction:**
+   - After the setup completes, create a file `app.py` and copy the prediction code into it. 
+   - Create a `config.json` file with AWS credentials and S3 paths in `/app/config/config.json` directory.
+      Replicate sample_config.json in this repository. Replicate sample_config.json in this repository (incase your `config.json` is in different directory or in home directory update the path in app.py in line 9 )
+   - Run the prediction application:
      ```bash
      spark-submit --master local[*] --packages org.apache.hadoop:hadoop-aws:3.3.6 app.py
      ```
@@ -104,29 +119,190 @@ This project demonstrates how to develop a parallel machine learning (ML) applic
 
 ---
 
-### Step 4: Prediction With Docker
- 
-1. **Set Up Docker:**
-   - If Docker is not installed, use the `setup_docker.sh` script:
+#### Option 2: Manual Installation
+
+If you prefer not to use the `setup_spark_ec2.sh` script, follow these steps to install Spark and dependencies manually:
+
+1. **Launch an EC2 Instance:**
+   - AMI: `Ubuntu Server 24.04 LTS`
+   - Instance Type: `t2.medium`
+
+2. **Install Java:**
+   - Install OpenJDK 11:
+     ```bash
+     sudo apt update && sudo apt install -y openjdk-11-jdk
+     java -version
+     ```
+
+3. **Install Python and pip:**
+   - Install Python 3 and pip:
+     ```bash
+     sudo apt install -y python3 python3-pip
+     python3 --version
+     pip3 --version
+     ```
+
+4. **Install NumPy:**
+   - Install NumPy:
+     ```bash
+     pip3 install numpy --break-system-packages
+     ```
+
+5. **Install Apache Spark:**
+   - Download and install Apache Spark:
+     ```bash
+     wget https://dlcdn.apache.org/spark/spark-3.5.3/spark-3.5.3-bin-hadoop3.tgz
+     tar -xzf spark-3.5.3-bin-hadoop3.tgz
+     mv spark-3.5.3-bin-hadoop3 spark
+     ```
+
+6. **Configure Spark Environment:**
+   - Add Spark environment variables to `~/.bashrc`:
+     ```bash
+     echo "export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64" >> ~/.bashrc
+     echo "export SPARK_HOME=~/spark" >> ~/.bashrc
+     echo "export PATH=\$SPARK_HOME/bin:\$SPARK_HOME/sbin:\$PATH" >> ~/.bashrc
+     source ~/.bashrc
+     ```
+
+7. **Verify Spark Installation:**
+   - Verify that Spark is installed:
+     ```bash
+     spark-shell --version
+     ```
+
+8. **Add S3A Connector:**
+   - Download the necessary Hadoop AWS jars:
+     ```bash
+     wget https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.2.0/hadoop-aws-3.2.0.jar
+     wget https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.11.375/aws-java-sdk-bundle-1.11.375.jar
+     mkdir -p ~/spark/jars
+     mv aws-java-sdk-bundle-1.11.375.jar hadoop-aws-3.2.0.jar ~/spark/jars
+     ```
+
+9. **Run Prediction:**
+   - Create a file `app.py` and copy the prediction code into it.
+   - Create a `config.json` file with AWS credentials and S3 paths in `/app/config/config.json` directory.
+      Replicate sample_config.json in this repository (incase your `config.json` is in different directory or in home directory update the path in app.py in line 9 )
+   - Run the prediction application:
+     ```bash
+     spark-submit --master local[*] --packages org.apache.hadoop:hadoop-aws:3.3.6 app.py
+     ```
+   - The F1 score will be displayed on the console.
+
+
+---
+
+
+### Step 4: Installation with Docker
+
+#### Option 1: Using `setup_docker.sh` Script
+
+1. **Launch an EC2 Instance:**
+
+   - AMI: `Amazon Linux 2`
+   - Instance Type: `t2.medium`
+
+2. **Run Docker Setup Script:**
+
+   - Upload the `setup_docker.sh` script to your EC2 instance.
+   - SSH into your EC2 instance and run the following commands to give execution permission and run the setup script:
      ```bash
      chmod +x setup_docker.sh
+
      ./setup_docker.sh
+     ```
+    - Log out and back in.
+
+3. **Verify Docker Installation:**
+
+   - Once the script completes, verify Docker is installed correctly by checking the version:
+     ```bash
+     docker --version
+     ```
+
+4. **Run Prediction:**
+
+   - Create a `config.json` file with AWS credentials and S3 paths.
+      Replicate sample_config.json in this repository
+     
+    - Run the container:
+     ```bash
+     docker run --rm -v /home/ec2-user/config.json:/app/config/config.json mjshah001/wine-quality-prediction:latest
+     ```
+   - The F1 score will be displayed in the container's logs.
+
+---
+
+#### Option 2: Manual Installation
+
+If you prefer not to use the `setup_docker.sh` script, follow these steps to install Docker manually:
+
+1. **Launch an EC2 Instance:**
+
+   - AMI: `Amazon Linux 2`
+   - Instance Type: `t2.medium`
+
+2. **Update the System and Install Dependencies:**
+
+   - Update the package list:
+     ```bash
+     sudo yum update -y
+     ```
+   - Install the required dependencies:
+     ```bash
+     sudo yum install -y yum-utils
+     ```
+
+3. **Install Docker:**
+
+   - Add Docker's official repository and install Docker:
+     ```bash
+     sudo amazon-linux-extras install -y docker
      ```
    - Log out and back in, then start the Docker service:
      ```bash
      sudo service docker start
      docker login
-     ```
-2. **Run Dockerized Application:**
-   - Pull the Docker image:
+   
+
+4. **Start Docker Service:**
+
+   - Start the Docker service:
      ```bash
-     docker pull mjshah001/wine-quality-prediction:latest
+     sudo service docker start
      ```
+
+5. **Enable Docker to Start on Boot:**
+
+   - Enable Docker to start automatically when the system boots:
+     ```bash
+     sudo systemctl enable docker
+     ```
+
+6. **Add User to Docker Group:**
+
+   - Add the `ec2-user` to the Docker group so you don't need to use `sudo` for Docker commands:
+     ```bash
+     sudo usermod -aG docker ec2-user
+     ```
+   - Log out and back in.
+
+7. **Verify Docker Installation:**
+
+   - Verify Docker is installed correctly by checking the version:
+     ```bash
+     docker --version
+     ```
+
+8. **Run Prediction:**
+
    - Create a `config.json` file with AWS credentials and S3 paths.
       Replicate sample_config.json in this repository
    - Run the container:
      ```bash
      docker run --rm -v /home/ec2-user/config.json:/app/config/config.json mjshah001/wine-quality-prediction:latest
      ```
+   - The F1 score will be displayed in the container's logs.
 
 ---
