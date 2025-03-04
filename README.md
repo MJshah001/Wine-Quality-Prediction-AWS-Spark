@@ -1,7 +1,7 @@
-# CS 643 Programming Assignment 2: Wine Quality Prediction in AWS
+# Wine Quality Prediction in AWS
 
 ## Overview
-This project demonstrates how to develop a parallel machine learning (ML) application using Apache Spark on AWS. It includes:
+This project demonstrates development of a parallel machine learning (ML) application using Apache Spark on AWS. It includes:
 1. Parallel training of a wine quality prediction model using Spark MLlib across multiple EC2 instances.
 2. A prediction application that evaluates wine quality, with and without Docker.
 3. Deployment of the prediction model using Docker for portability.
